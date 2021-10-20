@@ -61,8 +61,9 @@ def grad_year_comparison(year1, year2, gender1, gender2):
     In this case different grad years could have different scores
     based off of the gender of the two.
 
-    i.e. Grade difference of 3 might contribute less if the younger
-    was a guy vs. a girl
+    i.e. Grade difference of 3 would be weighted more if the younger
+    was a guy vs. a girl - we have a gender constant in place
+    that's amplified for each year the dude is younger.
 
     Actually this is probably the case with all relationships in
     hs/college - younger guy is usually less appealing
