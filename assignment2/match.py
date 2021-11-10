@@ -1,5 +1,9 @@
 import numpy as np
+import random
+import pprint
 from typing import List, Tuple
+from collections import deque
+
 
 def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List[Tuple]:
     """
@@ -21,19 +25,87 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
             - What data structure can you use to take advantage of this fact when forming your matches?
         - This is by no means an exhaustive list, feel free to reach out to us for more help!
     """
-    matches = [()]
+    pp = pprint.PrettyPrinter(indent=4)
+    q = deque()
+    N = len(gender_pref)
+    count_list = list(range(N))
+    random.shuffle(count_list)
+
+    proposer_preferences = {}
+    for i in range(0, N // 2):
+        proposer_preferences[count_list[i]] = scores[count_list[i]]
+    receiver_preferences = {}
+    for i in range(N // 2, N):
+        receiver_preferences[count_list[i]] = scores[count_list[i]]
+
+    matched = [False] * len(gender_id)
+
+    for proposer in proposer_preferences:
+        q.append(proposer)
+
+    # while some man is free - if our queue is not empty
+    # hasn't proposed to every woman - we can set negative values for scores for people that they have already matched with
+
+    # choose a man m - deq from deque
+    # choose a woman --> score is not negative
+    # if w is free --> if matched[w] == False
+    # match them both --> matched[w] = True, matched[m] = True
+    # elif comp score > than current comp score
+    # match and free up
+
+    matches = {}
+
+    while q:
+        proposer = q.pop()
+
+        receiver = -1
+        receiver_index = -1
+        for i, receiver_score in enumerate(proposer_preferences[proposer]):
+            if receiver_score == 0 or i not in receiver_preferences:
+                continue
+
+            receiver = receiver_score
+            receiver_index = i
+
+            break
+
+        if receiver_index == -1:
+            break
+
+        if not matched[receiver_index]:
+            matches[receiver_index] = proposer
+            matched[proposer] = True
+            matched[receiver_index] = True
+            proposer_preferences[proposer][receiver_index] = 0
+        else:
+            matched_proposer = matches[receiver_index]
+
+            if (
+                receiver_preferences[receiver_index][proposer]
+                > receiver_preferences[receiver_index][matched_proposer]
+            ):
+                matches[receiver_index] = proposer
+                proposer_preferences[proposer][receiver_index] = 0
+                matched[matched_proposer] = False
+                q.appendleft(matched_proposer)
+            else:
+                proposer_preferences[proposer][receiver_index] = 0
+                q.appendleft(proposer)
+                
+    pp.pprint(matches)
     return matches
 
+
 if __name__ == "__main__":
-    raw_scores = np.loadtxt('raw_scores.txt').tolist()
+    raw_scores = np.loadtxt("raw_scores.txt").tolist()
     genders = []
-    with open('genders.txt', 'r') as file:
+    with open("genders.txt", "r") as file:
         for line in file:
             curr = line[:-1]
             genders.append(curr)
 
     gender_preferences = []
-    with open('gender_preferences.txt', 'r') as file:
+    with open("gender_preferences.txt", "r") as file:
         for line in file:
             curr = line[:-1]
             gender_preferences.append(curr)
