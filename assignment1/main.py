@@ -18,34 +18,16 @@ class User:
 
 
 def cosine_similarity(v1, v2):
-    """
-    Cosine similarity, just took it off of stackoverflow. idk if this is
-    correct lmao
-    """
+    # assuming correctness of this function LOL
     sumxx, sumxy, sumyy = 0, 0, 0
     for i in range(len(v1)):
         x = v1[i]
         y = v2[i]
-        sumxx += x * x
-        sumyy += y * y
-        sumxy += x * y
+        sumxx += x * x; sumyy += y * y; sumxy += x * y
     return sumxy / math.sqrt(sumxx * sumyy)
 
 
 def compare_responses(response1, response2, question_distribution):
-    """
-    This is a stupid 5 min attempt at trying to impelment the weighted
-    question distribution as described in the google doc.
-
-    Loops through responses of 2 users, for each time they
-    answer the same thing, the score is weighted by
-    1 / (1 + p), where p is the proportion of users that answered
-    that question. Therefore, if p is high, the weight is lower.
-
-    Then we divide that by the total number of equivalent answers,
-    as ideally if the proportion is low for the same answers for every
-    question the weighted proportion score should be close to 1
-    """
     total_same = 0
     score = 0.0
     for i in range(len(response1)):
@@ -77,8 +59,8 @@ def grad_year_comparison(year1, year2, gender1, gender2):
     if gender1 == gender2:
         return 0.3  # because what if...? not quite 0 because there's opportunities to ~explore~ ;)
 
-    gender_constant = 0.3  # we add this constant if the male is younger
-    year_constant = 0.1  # general year constant for each singular difference in year
+    gender_constant = 0.2  # we add this constant if the male is younger
+    year_constant = 0.1  # general year constant for each singular difference in year | I set 
 
     score = (
         1.0
@@ -95,23 +77,12 @@ def grad_year_comparison(year1, year2, gender1, gender2):
 
 
 # Takes in two user objects and outputs a float denoting compatibility
-def compute_score(user1, user2, question_distribution):
-    score = 0.0
-    if user1.gender in user2.preferences and user2.gender in user1.preferences:
-        score += 0.1
-
-    answer_similarity = cosine_similarity(user1.responses, user2.responses)
-    answer_similarity_weighted = compare_responses(
-        user1.responses, user2.responses, question_distribution
-    )
-    grad_year = grad_year_comparison(
-        user1.grad_year, user2.grad_year, user1.gender, user2.gender
-    )
-    score += answer_similarity * 0.6
-    score += answer_similarity_weighted * 0.2
-    score += grad_year * 0.1
-
-    return score
+def compute_score(user1, user2):
+    compatibility = user1.gender in user2.preferences and user2.gender in user1.preferences
+    factor = (0.5) * grad_year_comparison(user1.grad_year, user2.grad_year, user1.gender, user2.gender)
+    val = sum([1 if a == b else 0 for (a, b) in zip(user1.responses, user2.responses)])
+    norm = (val / len(user1.responses))
+    return compatibility * (norm + factor)
 
 
 if __name__ == "__main__":
@@ -152,7 +123,7 @@ if __name__ == "__main__":
         for j in range(i + 1, len(users)):
             user1 = users[i]
             user2 = users[j]
-            score = compute_score(user1, user2, question_distribution)
+            score = compute_score(user1, user2)
             print(
                 "Compatibility between {} and {}: {}".format(
                     user1.name, user2.name, score
