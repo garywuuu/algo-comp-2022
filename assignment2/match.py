@@ -1,6 +1,5 @@
 import numpy as np
-import random
-import pprint
+from random import random
 from typing import List, Tuple
 from collections import deque
 
@@ -12,7 +11,6 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
     :param gender_id: list of N gender identities (Male, Female, Non-binary) corresponding to each user
     :param gender_pref: list of N gender preferences (Men, Women, Bisexual) corresponding to each user
     :return: `matches`, a List of (Proposer, Acceptor) Tuples representing monogamous matches
-
     Some Guiding Questions/Hints:
         - This is not the standard Men proposing & Women receiving scheme Gale-Shapley is introduced as
         - Instead, to account for various gender identity/preference combinations, it would be better to choose a random half of users to act as "Men" (proposers) and the other half as "Women" (receivers)
@@ -25,88 +23,75 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
             - What data structure can you use to take advantage of this fact when forming your matches?
         - This is by no means an exhaustive list, feel free to reach out to us for more help!
     """
-    pp = pprint.PrettyPrinter(indent=4)
-    q = deque()
-    N = len(gender_pref)
-    count_list = list(range(N))
-    random.shuffle(count_list)
 
-    proposer_preferences = {}
-    for i in range(0, N // 2):
-        proposer_preferences[count_list[i]] = scores[count_list[i]]
-    receiver_preferences = {}
-    for i in range(N // 2, N):
-        receiver_preferences[count_list[i]] = scores[count_list[i]]
+    N = len(scores)
 
-    matched = [False] * len(gender_id)
+    proposer_preferences, receiver_preferences = [], []
+    shuffled = random.shuffle(scores)
 
-    for proposer in proposer_preferences:
-        q.append(proposer)
+    for i in range(0, 4):
+        proposer_preferences[i] = shuffled[i]
+    for i in range(5,9):
+        receiver_preferences[i-5] = shuffled[i]
 
-    # while some man is free - if our queue is not empty
-    # hasn't proposed to every woman - we can set negative values for scores for people that they have already matched with
-
-    # choose a man m - deq from deque
-    # choose a woman --> score is not negative
-    # if w is free --> if matched[w] == False
-    # match them both --> matched[w] = True, matched[m] = True
-    # elif comp score > than current comp score
-    # match and free up
-
+    # receiver is index
+    is_matched = [False] * N
     matches = {}
 
-    while q:
-        proposer = q.pop()
+    proposers = deque() 
 
-        receiver = -1
-        receiver_index = -1
-        for i, receiver_score in enumerate(proposer_preferences[proposer]):
-            if receiver_score == 0 or i not in receiver_preferences:
-                continue
-            elif i == "bisexual":
+    for proposer in proposer_preferences:
+        proposers.append(proposer)
+
+    # while some proposer is free and hasn't proposed to every receiver
+    while proposers:
+
+        prop = proposers.pop()
+        # loop through possible receivers
+        for i in range(N/2):
+            # make sure preferences match
+            if check_preferences(gender_pref[prop], gender_id[i]):
+
+                # is receiver is not matched
+                if not is_matched[i]:
+                    matches[receiver_preferences[i]] = prop
+                    is_matched[i] = True
+
+                # if receiver prefers current proposer
+                elif receiver_preferences[prop] > receiver_preferences[matches[i]]:
+                    # get previous proposer and append to queue
+                    prev_prop = matches[receiver_preferences[i]]
+                    matches[prop] = receiver_preferences[i]
+                    proposers.append(prev_prop)
                 
-
-            receiver = receiver_score
-            receiver_index = i
-
-            break
-
-        if receiver_index == -1:
-            break
-
-        if not matched[receiver_index]:
-            matches[receiver_index] = proposer
-            matched[proposer] = True
-            matched[receiver_index] = True
-            proposer_preferences[proposer][receiver_index] = 0
-        else:
-            matched_proposer = matches[receiver_index]
-
-            if (receiver_preferences[receiver_index][proposer]
-                > receiver_preferences[receiver_index][matched_proposer]):
-
-                matches[receiver_index] = proposer
-                proposer_preferences[proposer][receiver_index] = 0
-                matched[matched_proposer] = False
-                q.appendleft(matched_proposer)
-            else:
-                proposer_preferences[proposer][receiver_index] = 0
-                q.appendleft(proposer)
-                
-    pp.pprint(matches)
+                # else reject
+                else:
+                    break
+            
     return matches
 
 
+def check_preferences(pref, gender):
+    if pref == "Bisexual":
+        return True
+    elif pref == "Men":
+        if gender in ("Male", "Nonbinary"):
+            return True
+    elif pref == "Women":
+        if gender in ("Female", "Nonbinary"):
+            return True  
+    return False
+
 if __name__ == "__main__":
-    raw_scores = np.loadtxt("raw_scores.txt").tolist()
+    raw_scores = np.loadtxt('raw_scores.txt').tolist()
     genders = []
-    with open("genders.txt", "r") as file:
+    with open('genders.txt', 'r') as file:
         for line in file:
             curr = line[:-1]
             genders.append(curr)
 
     gender_preferences = []
-    with open("gender_preferences.txt", "r") as file:
+    with open('gender_preferences.txt', 'r') as file:
         for line in file:
             curr = line[:-1]
             gender_preferences.append(curr)
