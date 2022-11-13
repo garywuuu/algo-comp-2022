@@ -63,6 +63,8 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
         for i, receiver_score in enumerate(proposer_preferences[proposer]):
             if receiver_score == 0 or i not in receiver_preferences:
                 continue
+            elif i == "bisexual":
+                
 
             receiver = receiver_score
             receiver_index = i
@@ -80,10 +82,9 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
         else:
             matched_proposer = matches[receiver_index]
 
-            if (
-                receiver_preferences[receiver_index][proposer]
-                > receiver_preferences[receiver_index][matched_proposer]
-            ):
+            if (receiver_preferences[receiver_index][proposer]
+                > receiver_preferences[receiver_index][matched_proposer]):
+
                 matches[receiver_index] = proposer
                 proposer_preferences[proposer][receiver_index] = 0
                 matched[matched_proposer] = False
